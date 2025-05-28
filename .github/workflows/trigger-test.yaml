@@ -14,8 +14,8 @@ jobs:
         env:
           APP_ID: ${{ secrets.GH_APP_ID }}
           PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
-          OWNER: "sonu-96"                     # e.g., my-org
-          REPO: "mynewtest"                       # e.g., wl-office-automation
+          OWNER: "WebLedgerHQ"                     # e.g., my-org
+          REPO: "office-automation"                       # e.g., wl-office-automation
           PR_NUMBER: ${{ github.event.pull_request.number }}
           FRONTEND_REPO: ${{ github.repository }}  
         run: |
