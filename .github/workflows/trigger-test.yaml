@@ -20,7 +20,7 @@ jobs:
           FRONTEND_REPO: ${{ github.repository }}  
         run: |
           # Install dependencies
-          sudo npm install -g @octokit/core @octokit/auth-app
+          npm install @octokit/core @octokit/auth-app
 
           # Create dispatch script
           cat << 'EOF' > dispatch.mjs
@@ -72,5 +72,5 @@ jobs:
           EOF
 
           # Run dispatch script
-          node --experimental-modules --es-module-specifier-resolution=node dispatch.mjs
+          node dispatch.mjs
 
