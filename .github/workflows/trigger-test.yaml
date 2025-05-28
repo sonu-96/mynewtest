@@ -1,0 +1,77 @@
+name: Trigger Playwright Tests
+
+on:
+  pull_request:
+    branches:
+      - qa
+
+jobs:
+  dispatch-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send dispatch event to QA repo
+        env:
+          APP_ID: ${{ secrets.GH_APP_ID }}
+          PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
+        run: |
+          # Install dependencies
+          sudo npm install -g @octokit/core @octokit/auth-app
+
+          # Create dispatch script
+          cat << 'EOF' > dispatch.mjs
+          import { readFileSync } from 'fs';
+          import { createAppAuth } from "@octokit/auth-app";
+          import { Octokit } from "@octokit/core";
+
+          const appId = process.env.APP_ID;
+          const privateKey = process.env.PRIVATE_KEY.replace(/\\n/g, '\n');
+          const owner = process.env.OWNER;
+          const repo = process.env.REPO;
+          const prNumber = process.env.PR_NUMBER;
+          const frontendRepo = process.env.FRONTEND_REPO;
+
+          const auth = createAppAuth({
+            appId,
+            privateKey,
+          });
+
+          const appAuthentication = await auth({ type: "app" });
+
+          const octokit = new Octokit({
+            auth: appAuthentication.token,
+          });
+
+          const { data: installations } = await octokit.request("GET /app/installations");
+          const installationId = installations.find(i => i.account.login.toLowerCase() === owner.toLowerCase())?.id;
+
+          const installationAuth = await auth({
+            type: "installation",
+            installationId,
+          });
+
+          const octokitInstall = new Octokit({
+            auth: installationAuth.token,
+          });
+
+          await octokitInstall.request("POST /repos/{owner}/{repo}/dispatches", {
+            owner,
+            repo,
+            event_type: "run-playwright-tests",
+            client_payload: {
+              pr_number: prNumber,
+              frontend_repo: frontendRepo
+            }
+          });
+
+          console.log("Dispatch event sent!");
+          EOF
+
+          # Run dispatch script
+          node --experimental-modules --es-module-specifier-resolution=node dispatch.mjs
+        env:
+          OWNER: "sonu-96"                     # e.g., my-org
+          REPO: "mynewtest"                       # e.g., wl-office-automation
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          FRONTEND_REPO: ${{ github.repository }}
+
