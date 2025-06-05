@@ -1,4 +1,4 @@
-name: Trigger QA ECS Task via SQS
+name: Trigger ECS Task via SQS on QA PR
 
 on:
   pull_request:
@@ -6,16 +6,22 @@ on:
       - qa
 
 jobs:
-  trigger-sqs:
+  send-sqs:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Send SQS Message
-        uses: aws-actions/aws-cli-action@v1
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
-          inline: |
-            aws sqs send-message \
-              --queue-url https://sqs.ap-south-1.amazonaws.com/546149929942/qa-test-trigger-queue \
-              --message-body "trigger"
+
+      - name: Send message to SQS
+        run: |
+          aws sqs send-message \
+            --queue-url https://sqs.ap-south-1.amazonaws.com/546149929942/qa-test-trigger-queue \
+            --message-body "Trigger ECS task for PR #${{ github.event.pull_request.number }}"
