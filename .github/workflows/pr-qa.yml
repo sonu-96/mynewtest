@@ -1,0 +1,21 @@
+name: Trigger QA ECS Task via SQS
+
+on:
+  pull_request:
+    branches:
+      - qa
+
+jobs:
+  trigger-sqs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send SQS Message
+        uses: aws-actions/aws-cli-action@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+          inline: |
+            aws sqs send-message \
+              --queue-url https://sqs.ap-south-1.amazonaws.com/546149929942/qa-test-trigger-queue \
+              --message-body "trigger"
